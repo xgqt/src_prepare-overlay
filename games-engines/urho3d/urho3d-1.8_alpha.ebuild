@@ -5,7 +5,7 @@ EAPI=7
 
 MY_PN="Urho3D"
 
-inherit xdg cmake
+inherit flag-o-matic xdg cmake
 
 DESCRIPTION="Cross-platform 2D and 3D game engine"
 HOMEPAGE="https://urho3d.github.io/"
