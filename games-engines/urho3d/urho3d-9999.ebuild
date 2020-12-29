@@ -14,11 +14,7 @@ if [[ "${PV}" == *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/${PN}/${MY_PN}.git"
 else
-	if [[ "${PV}" == *_alpha ]]; then
-		MY_PV="${PV/_alpha/-ALPHA}"
-	else
-		MY_PV="${PV}"
-	fi
+	MY_PV="${PV/_alpha/-ALPHA}"
 	SRC_URI="https://github.com/${PN}/${MY_PN}/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64"
 	S="${WORKDIR}/${MY_PN}-${MY_PV}"
