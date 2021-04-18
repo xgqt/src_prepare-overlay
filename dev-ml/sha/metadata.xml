@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>xgqt@riseup.net</email>
+		<name>Maciej Barć</name>
+	</maintainer>
+	<longdescription lang="en">
+		This is the binding for SHA interface code in OCaml. Offering the same
+		interface than the MD5 digest included in the OCaml standard library.
+		It's currently providing SHA1, SHA256 and SHA512 hash functions.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">djs55/ocaml-sha</remote-id>
+	</upstream>
+</pkgmetadata>

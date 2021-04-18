@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>xgqt@riseup.net</email>
+		<name>Maciej Barć</name>
+	</maintainer>
+	<longdescription lang="en">
+		Haxe is an open source toolkit based on a modern, high level,
+		static-typed programming language, a cross-compiler, a complete
+		cross-platform standard library and ways to access each platform's
+		native capabilities.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">HaxeFoundation/haxe/</remote-id>
+	</upstream>
+</pkgmetadata>
