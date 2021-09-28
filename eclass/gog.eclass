@@ -43,8 +43,10 @@ PROPERTIES+="live"
 : ${GOG_GAME_INSTALLER:=()}
 
 LICENSE+="GOG_EULA"
+# lgogdownloader-3.8::gentoo can be used as it has the necessary patch required for
+# headless operations with Portage.
 BDEPEND+="
-	games-util/lgogdownloader[portage]
+	>=games-util/lgogdownloader-3.8
 	app-arch/innoextract
 "
 
