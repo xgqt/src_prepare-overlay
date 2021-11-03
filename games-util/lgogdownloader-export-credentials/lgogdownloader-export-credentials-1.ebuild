@@ -19,7 +19,7 @@ RDEPEND="
 	app-arch/xz-utils
 	sys-apps/coreutils
 	sys-apps/sed
-	games-util/lgogdownloader
+	>=games-util/lgogdownloader-3.8
 	app-shells/bash
 "
 
