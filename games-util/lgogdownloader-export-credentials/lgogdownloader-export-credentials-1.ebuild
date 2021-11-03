@@ -6,7 +6,7 @@ EAPI=8
 DESCRIPTION="Helper script for src_prepare-overlay GOG eclass that exports credentials."
 HOMEPAGE="https://github.com/grepwood/lgogdownloader-export-credentials"
 
-LICENSE="GPLv3"
+LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
 
@@ -20,7 +20,7 @@ RDEPEND="
 	sys-apps/coreutils
 	sys-apps/sed
 	>=games-util/lgogdownloader-3.8
-	app-shells/bash
+	app-shells/bash:=
 "
 
 DEPEND="${RDEPEND}"
@@ -28,9 +28,9 @@ DEPEND="${RDEPEND}"
 S=${WORKDIR}
 
 src_compile() {
-	cp ${S}/${PN}-${PV}/${PN} ${S}
+	cp "${S}/${PN}-${PV}/${PN}" "${S}"
 }
 
 src_install() {
-	dobin ${PN}
+	dobin "${PN}"
 }
