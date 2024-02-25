@@ -39,7 +39,6 @@ BDEPEND+="
 "
 
 # @FUNCTION: wise_unpack_installers
-# @USAGE:
 # @DESCRIPTION:
 # This function requires that a global array called WISE_INSTALLER be declared on the package's level.
 # All paths in that variable will be extracted with e_wise for DOS, because a native version does not exist yet.
