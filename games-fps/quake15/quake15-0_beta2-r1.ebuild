@@ -12,10 +12,10 @@ SRC_URI="
 
 LICENSE="HPND"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~ppc64 ~x86"
+KEYWORDS="~amd64 ~x86 ~ppc64 ~arm64"
 
-RDEPEND=">=games-fps/darkplaces-20170829_beta1"
-DEPEND="app-arch/p7zip"
+RDEPEND="=games-fps/darkplaces-20170829_beta1-r1"
+BDEPEND="app-arch/p7zip"
 
 S="${WORKDIR}"
 
@@ -28,5 +28,9 @@ pkg_postinst() {
 	echo
 	elog "In order to play this mod run Quake with -game option:"
 	elog "    darkplaces -game quake15"
+	elog "However, this mod can only be played with =games-fps/darkplaces-20170829_beta1-r1"
+	elog "If you update the engine, you should not attempt to start this mod."
+	elog "See the relevant GitHub issue for more info:"
+	elog "     https://github.com/DarkPlacesEngine/darkplaces/issues/133"
 	echo
 }
