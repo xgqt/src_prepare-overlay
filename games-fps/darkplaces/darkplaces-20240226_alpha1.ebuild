@@ -5,17 +5,14 @@ EAPI=8
 
 inherit flag-o-matic unpacker desktop wrapper
 
-# Latest versions are in http://icculus.org/twilight/darkplaces/files/
-MY_PV="${PV/_beta/beta}"
-MY_SOURCE="${PN}enginesource${MY_PV}.tar.gz"
-
 # Different Quake 1 engines expect the lights in different directories
 # http://www.fuhquake.net/download.html and http://www.kgbsyndicate.com/romi/
 MY_LIGHTS="fuhquake-lits.rar"
 
 DESCRIPTION="Enhanced engine for iD Software's Quake 1"
-HOMEPAGE="http://icculus.org/twilight/darkplaces/"
+HOMEPAGE="https://icculus.org/twilight/darkplaces/"
 GIT_COMMIT="95ed24831ca8dcbf6ae8f886733c35ce2ad83272"
+MY_SOURCE="${PN}enginesource-${GIT_COMMIT}.tar.gz"
 SRC_URI="https://github.com/DarkPlacesEngine/darkplaces/archive/${GIT_COMMIT}.tar.gz -> "${MY_SOURCE}"
 	lights? (
 		http://www.fuhquake.net/files/extras/${MY_LIGHTS}
