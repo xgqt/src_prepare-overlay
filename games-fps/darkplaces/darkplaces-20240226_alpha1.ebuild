@@ -1,7 +1,7 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit flag-o-matic unpacker desktop wrapper
 
@@ -24,16 +24,19 @@ SRC_URI="https://github.com/DarkPlacesEngine/darkplaces/archive/${GIT_COMMIT}.ta
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="capture cdinstall debug dedicated demo ipv6 lights sdl textures"
+IUSE="capture cdinstall cpu_flags_x86_sse debug dedicated demo ipv6 lights sdl textures"
+
+REQUIRED_USE="
+	amd64? ( cpu_flags_x86_sse )
+"
 
 SDL_RDEPEND="
 	media-libs/libsdl2[udev]
 	x11-libs/libX11
-	capture? (
-		media-libs/libogg
-		media-libs/libtheora
-		media-libs/libvorbis
-	)
+	media-libs/libogg
+	media-libs/libtheora
+	media-libs/libvorbis
+	media-libs/libxmp
 "
 RDEPEND="
 	dev-libs/d0_blind_id
@@ -79,6 +82,9 @@ src_prepare() {
 	cd "${S}"
 	rm mingw_note.txt
 	strip-flags
+	patch -p1 -i "${FILESDIR}/0020-make-sse-selectable.patch"
+	patch -p1 -i "${FILESDIR}/0030-builddate-template.patch" || die
+	sed -i "s/%{PVR}/${PVR}/" builddate.c || die
 	# Only additional CFLAGS optimization is the -march flag
 	local march=$(get-flag -march)
 	sed -i \
@@ -106,6 +112,18 @@ src_compile() {
 	else
 		elog "Video capture: disabled"
 	fi
+	local sse_enabled=0
+	if use cpu_flags_x86_sse; then
+		elog "Skeletal animations: uses SSE"
+		sse_enabled=1
+	else
+		if use amd64; then
+			elog "Skeletal animations: uses SSE, not disabling on AMD64"
+			sse_enabled=1
+		else
+			elog "Skeletal animations: uses generic code"
+		fi
+	fi
 	local opts="DP_FS_BASEDIR=\"${dir}\" \
 		DP_LINK_JPEG=shared \
 		DP_LINK_CRYPTO=shared \
@@ -113,7 +131,9 @@ src_compile() {
 		DP_LINK_ZLIB=shared \
 		DP_LINK_ODE=shared \
 		DP_VIDEO_CAPTURE=${video_capture} \
-		DP_PRELOAD_DEPENDENCIES=1"
+		DP_PRELOAD_DEPENDENCIES=1 \
+		GENTOO_BUILD=1 \
+		DP_SSE=${sse_enabled}"
 	local type="release"
 	if use debug; then
 		type="debug"
@@ -162,6 +182,9 @@ src_install() {
 
 pkg_postinst() {
 	if ! use cdinstall && ! use demo ; then
-		elog "Place pak0.pak and pak1.pak in ${dir}/id1"
+		elog "Remember to place pak0.pak and pak1.pak in ${dir}/id1"
+		if use cdda; then
+			elog "If you wish to have the original soundtrack available without playing from an optical drive, please make sure that the path ${dir}/id1/sound/cdtracks exists, and that it contains the original soundtrack. The expected filename schema is track%i.%s with a double-digit count, either in WAV RIFF or OGG Vorbis format."
+		fi
 	fi
 }

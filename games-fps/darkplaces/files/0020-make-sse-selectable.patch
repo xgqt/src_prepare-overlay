@@ -1,0 +1,149 @@
+--- a/makefile.inc	2024-03-18 14:28:17.506666539 +0100
++++ b/makefile.inc	2024-03-18 14:34:25.586666536 +0100
+@@ -157,9 +157,12 @@
+ 
+ ifeq ($(DP_SSE),1)
+ 	CFLAGS_SSE=-msse
+-	CFLAGS_SSE2=-msse2
+ else
+ 	CFLAGS_SSE=
++endif # ifeq ($(DP_SSE),1)
++ifeq ($(DP_SSE2),1)
++	CFLAGS_SSE2=-msse2
++else
+ 	CFLAGS_SSE2=
+ endif # ifeq ($(DP_SSE),1)
+ 
+--- a/makefile	2024-03-31 16:39:13.059767771 +0200
++++ b/makefile	2024-03-31 16:28:43.563130538 +0200
+@@ -26,29 +26,32 @@
+ endif  # ifdef windir
+ endif  # ifndef DP_MAKE_TARGET
+ 
++# If we are Gentoo, then we know what we're doing and we can move along
++ifndef GENTOO_BUILD
+ # If we're targeting an x86 CPU we want to enable DP_SSE (CFLAGS_SSE and SSE2)
+-ifeq ($(DP_MAKE_TARGET), mingw)
+-	DP_SSE:=1
+-else ifeq ($(OS),Windows_NT)
+-	ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+-		DP_SSE:=1
+-	else ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
+-		DP_SSE:=1
+-	else ifeq ($(PROCESSOR_ARCHITECTURE),x86)
+-		DP_SSE:=1
+-	else
+-		DP_SSE:=0
+-	endif
+-else
+-	DP_MACHINE:=$(shell uname -m)
+-	ifeq ($(DP_MACHINE),x86_64)
+-		DP_SSE:=1
+-	else ifeq ($(DP_MACHINE),i686)
+-		DP_SSE:=1
+-	else ifeq ($(DP_MACHINE),i386)
++	ifeq ($(DP_MAKE_TARGET), mingw)
+ 		DP_SSE:=1
++	else ifeq ($(OS),Windows_NT)
++		ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
++			DP_SSE:=1
++		else ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
++			DP_SSE:=1
++		else ifeq ($(PROCESSOR_ARCHITECTURE),x86)
++			DP_SSE:=1
++		else
++			DP_SSE:=0
++		endif
+ 	else
+-		DP_SSE:=0
++		DP_MACHINE:=$(shell uname -m)
++		ifeq ($(DP_MACHINE),x86_64)
++			DP_SSE:=1
++		else ifeq ($(DP_MACHINE),i686)
++			DP_SSE:=1
++		else ifeq ($(DP_MACHINE),i386)
++			DP_SSE:=1
++		else
++			DP_SSE:=0
++		endif
+ 	endif
+ endif
+ 
+--- a/sys.h	2024-03-31 16:37:29.066439260 +0200
++++ b/sys.h	2024-03-31 16:37:02.229773838 +0200
+@@ -93,39 +93,47 @@
+ #endif
+ 
+ #if defined(__GNUC__) || (__clang__)
+-# if defined(__i386__)
+-#  define DP_ARCH_STR		"686"
+-#  define SSE_POSSIBLE
+-#  ifdef __SSE__
+-#   define SSE_PRESENT
+-#  endif
+-#  ifdef __SSE2__
+-#   define SSE2_PRESENT
+-#  endif
+-# elif defined(__x86_64__)
+-#  define DP_ARCH_STR		"x86_64"
+-#  define SSE_PRESENT
+-#  define SSE2_PRESENT
+-# elif defined(__powerpc__)
+-#  define DP_ARCH_STR		"ppc"
+-# endif
+-#elif defined(_WIN64)
+-# define DP_ARCH_STR		"x86_64"
+-# define SSE_PRESENT
+-# define SSE2_PRESENT
+-#elif defined(WIN32)
+-# define DP_ARCH_STR		"x86"
+-# define SSE_POSSIBLE
++#	if defined(__i386__) || defined(WIN32)
++#		ifdef __SSE__
++#			define SSE_POSSIBLE
++#		endif
++#		ifdef __SSE2__
++#			define SSE2_POSSIBLE
++#		endif
++#		if defined(__i686__)
++#			define DP_ARCH_STR "i686"
++#		elif defined(__i586__)
++#			define DP_ARCH_STR "i586"
++#		elif defined(__i486__)
++#			define DP_ARCH_STR "i486"
++#		else
++#			define DP_ARCH_STR "i386"
++#		endif
++#	elif defined(__amd64__) || defined(_WIN64)
++#			define SSE_POSSIBLE
++#			define SSE2_POSSIBLE
++#			define DP_ARCH_STR "amd64"
++#	elif defined(__powerpc64__)
++#			define DP_ARCH_STR "ppc64"
++#	elif defined(__powerpc__)
++#			define DP_ARCH_STR "ppc"
++#	elif defined(__arm64__)
++#			define DP_ARCH_STR "arm64"
++#	endif
+ #endif
+ 
+-#ifdef SSE_PRESENT
+-# define SSE_POSSIBLE
++#ifdef SSE_POSSIBLE
++#	define SSE_PRESENT
++#endif
++#ifdef SSE2_POSSIBLE
++#	define SSE2_PRESENT
+ #endif
+ 
+ #ifdef NO_SSE
+-# undef SSE_PRESENT
+-# undef SSE_POSSIBLE
+-# undef SSE2_PRESENT
++#	undef SSE_PRESENT
++#	undef SSE_POSSIBLE
++#	undef SSE2_PRESENT
++#	undef SSE2_POSSIBLE
+ #endif
+ 
+ #ifdef SSE_POSSIBLE

@@ -1,0 +1,20 @@
+--- a/common.c	2017-08-30 06:29:14.000000000 +0200
++++ b/common.c	2024-03-31 14:46:25.586415464 +0200
+@@ -1480,6 +1480,7 @@
+ { GAME_STRAPBOMB,				GAME_STRAPBOMB,				"strapbomb",			"-strapbomb",				"Strap-on-bomb Car",		"Strap-on-bomb_Car",		"id1",		NULL,			"strap",			"strapbomb"				}, // COMMANDLINEOPTION: Game: -strapbomb runs the game Strap-on-bomb Car
+ { GAME_MOONHELM,				GAME_MOONHELM,				"moonhelm",				"-moonhelm",				"MoonHelm",					"MoonHelm",					"data",		NULL,			"mh",				"moonhelm"				}, // COMMANDLINEOPTION: Game: -moonhelm runs the game MoonHelm
+ { GAME_VORETOURNAMENT,			GAME_VORETOURNAMENT,		"voretournament",		"-voretournament",			"Vore Tournament",			"Vore_Tournament",			"data",		NULL,			"voretournament",	"voretournament"		}, // COMMANDLINEOPTION: Game: -voretournament runs the multiplayer game Vore Tournament
++{ GAME_QUAKE15,	GAME_NORMAL,	"quake15",	"-quake15",	"Quake 1.5",	"Quake 1.5",	"id1",	"quake15",	"q15",	"quake15"}, // COMMANDLINEOPTION: Game: -quake15 runs the game Quake 1.5
+ };
+ 
+ static void COM_SetGameType(int index);
+--- a/common.h	2017-08-30 06:29:14.000000000 +0200
++++ b/common.h	2024-03-31 14:46:50.596414296 +0200
+@@ -298,6 +298,7 @@
+ 	GAME_STRAPBOMB, // added by motorsep for Urre
+ 	GAME_MOONHELM,
+ 	GAME_VORETOURNAMENT,
++	GAME_QUAKE15,
+ 	GAME_COUNT
+ }
+ gamemode_t;

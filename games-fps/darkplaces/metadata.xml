@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
-    <use>
-        <flag name="capture">Enables video capture with OGG</flag>
-        <flag name="cdsound">Enables using CD audio in the engine</flag>
-        <flag name="demo">Uses the demo data from quake1 (quake1-demodata)</flag>
-        <flag name="lights">Install and setup the updated light maps from FuhQuake</flag>
-        <flag name="textures">Install and setup the updated textures</flag>
-    </use>
+  <maintainer type="project">
+    <email>moog621@gmail.com</email>
+    <name>Michał Dec</name>
+  </maintainer>
+  <use>
+    <flag name="capture">Adds support for video capture with media-libs/libtheora</flag>
+    <flag name="demo">Uses the demo data from quake1 (quake1-demodata)</flag>
+    <flag name="lights">Install and setup the updated light maps</flag>
+    <flag name="textures">Install and setup the updated textures</flag>
+  </use>
 </pkgmetadata>

@@ -1,0 +1,381 @@
+--- a/makefile.inc	2024-03-18 14:28:17.506666539 +0100
++++ b/makefile.inc	2024-03-18 14:34:25.586666536 +0100
+@@ -181,9 +181,12 @@
+ 
+ ifeq ($(DP_SSE),1)
+ 	CFLAGS_SSE=-msse
+-	CFLAGS_SSE2=-msse2
+ else
+ 	CFLAGS_SSE=
++endif # ifeq ($(DP_SSE),1)
++ifeq ($(DP_SSE2),1)
++	CFLAGS_SSE2=-msse2
++else
+ 	CFLAGS_SSE2=
+ endif # ifeq ($(DP_SSE),1)
+ 
+--- a/makefile	2017-08-30 06:29:14.000000000 +0200
++++ b/makefile	2024-03-18 14:41:57.396666527 +0100
+@@ -26,24 +26,29 @@
+ endif  # ifdef windir
+ endif  # ifndef DP_MAKE_TARGET
+ 
++# If we are Gentoo, then we know what we're doing and we can move along
++ifndef GENTOO_BUILD
+ # If we're targeting an x86 CPU we want to enable DP_SSE (CFLAGS_SSE and SSE2)
+-ifeq ($(DP_MAKE_TARGET), mingw)
+-	DP_SSE:=1
+-else
+-	DP_MACHINE:=$(shell uname -m)
+-	ifeq ($(DP_MACHINE),x86_64)
++	ifeq ($(DP_MAKE_TARGET), mingw)
+ 		DP_SSE:=1
++		DP_SSE2:=1
+ 	else
+-	ifeq ($(DP_MACHINE),i686)
+-		DP_SSE:=1
+-	else
+-	ifeq ($(DP_MACHINE),i386)
+-		DP_SSE:=1
+-	else
+-		DP_SSE:=0
+-	endif # ifeq ($(DP_MACHINE),i386)
+-	endif # ifeq ($(DP_MACHINE),i686)
+-	endif # ifeq ($(DP_MACHINE),x86_64)
++		DP_MACHINE:=$(shell uname -m)
++		ifeq ($(DP_MACHINE),x86_64)
++			DP_SSE:=1
++			DP_SSE2:=1
++		else
++			ifeq ($(DP_MACHINE),i686)
++				DP_SSE:=1
++			else
++				ifeq ($(DP_MACHINE),i386)
++					DP_SSE:=1
++				else
++					DP_SSE:=0
++				endif # ifeq ($(DP_MACHINE),i386)
++			endif # ifeq ($(DP_MACHINE),i686)
++		endif # ifeq ($(DP_MACHINE),x86_64)
++	endif
+ endif
+ 
+ # Makefile name
+--- a/quakedef.h	2017-08-30 06:29:14.000000000 +0200
++++ b/quakedef.h	2024-03-18 15:22:43.836666480 +0100
+@@ -470,39 +470,44 @@
+ #endif
+ 
+ #if defined(__GNUC__)
+-# if defined(__i386__)
+-#  define DP_ARCH_STR		"686"
+-#  define SSE_POSSIBLE
+-#  ifdef __SSE__
+-#   define SSE_PRESENT
+-#  endif
+-#  ifdef __SSE2__
+-#   define SSE2_PRESENT
+-#  endif
+-# elif defined(__x86_64__)
+-#  define DP_ARCH_STR		"x86_64"
+-#  define SSE_PRESENT
+-#  define SSE2_PRESENT
+-# elif defined(__powerpc__)
+-#  define DP_ARCH_STR		"ppc"
+-# endif
+-#elif defined(_WIN64)
+-# define DP_ARCH_STR		"x86_64"
+-# define SSE_PRESENT
+-# define SSE2_PRESENT
+-#elif defined(WIN32)
+-# define DP_ARCH_STR		"x86"
+-# define SSE_POSSIBLE
++#	if defined(__i386__) || defined(WIN32)
++#		ifdef __SSE__
++#			define SSE_POSSIBLE
++#		endif
++#		ifdef __SSE2__
++#			define SSE2_POSSIBLE
++#		endif
++#		if defined(__i686__)
++#			define DP_ARCH_STR "i686"
++#		elif defined(__i586__)
++#			define DP_ARCH_STR "i586"
++#		elif defined(__i486__)
++#			define DP_ARCH_STR "i486"
++#		else
++#			define DP_ARCH_STR "i386"
++#		endif
++#	elif defined(__amd64__) || defined(_WIN64)
++#		define SSE_POSSIBLE
++#		define SSE2_POSSIBLE
++#		define DP_ARCH_STR "amd64"
++#	elif defined(__powerpc64__)
++#		define DP_ARCH_STR "ppc64"
++#	elif defined(__arm64__)
++#		define DP_ARCH_STR "arm64"
++#	endif
+ #endif
+-
+-#ifdef SSE_PRESENT
+-# define SSE_POSSIBLE
++#ifdef SSE_POSSIBLE
++#	define SSE_PRESENT
++#endif
++#ifdef SSE2_POSSIBLE
++#	define SSE2_PRESENT
+ #endif
+ 
+ #ifdef NO_SSE
+-# undef SSE_PRESENT
+-# undef SSE_POSSIBLE
+-# undef SSE2_PRESENT
++#	undef SSE_PRESENT
++#	undef SSE_POSSIBLE
++#	undef SSE2_PRESENT
++#	undef SSE2_POSSIBLE
+ #endif
+ 
+ #ifdef SSE_POSSIBLE
+--- a/dpsoftrast.c	2017-08-30 06:29:14.000000000 +0200
++++ b/dpsoftrast.c	2024-03-18 18:51:30.696666431 +0100
+@@ -17,7 +17,7 @@
+ #define ALIGN_SIZE 16
+ #define ATOMIC_SIZE 4
+ 
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	#if defined(__APPLE__)
+ 		#include <libkern/OSAtomic.h>
+ 		#define ALIGN(var) var __attribute__((__aligned__(16)))
+@@ -84,7 +84,7 @@
+ #define ATOMIC_ADD(counter, val) ((void)((counter) += (val)))
+ #endif
+ 
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ #include <emmintrin.h>
+ 
+ #if defined(__GNUC__) && (__GNUC < 4 || __GNUC_MINOR__ < 6) && !defined(__clang__)
+@@ -1393,7 +1393,7 @@
+ }
+ void DPSOFTRAST_UniformMatrix4fv(DPSOFTRAST_UNIFORM uniform, int arraysize, int transpose, const float *v)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int i, index;
+ 	for (i = 0, index = (int)uniform;i < arraysize;i++, index += 4, v += 16)
+ 	{
+@@ -1467,7 +1467,7 @@
+ 	command->clipplane[3] = w;
+ }
+ 
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ static void DPSOFTRAST_Load4fTo4f(float *dst, const unsigned char *src, int size, int stride)
+ {
+ 	float *end = dst + size*4;
+@@ -1663,7 +1663,7 @@
+ 
+ static void DPSOFTRAST_Vertex_Transform(float *out4f, const float *in4f, int numitems, const float *inmatrix16f)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	static const float identitymatrix16f[4][4] = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
+ 	__m128 m0, m1, m2, m3;
+ 	float *end;
+@@ -1716,7 +1716,7 @@
+ }
+ #endif
+ 
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ #define DPSOFTRAST_PROJECTVERTEX(out, in, viewportcenter, viewportscale) \
+ { \
+ 	__m128 p = (in), w = _mm_shuffle_ps(p, p, _MM_SHUFFLE(3, 3, 3, 3)); \
+@@ -1919,7 +1919,7 @@
+ 
+ static float *DPSOFTRAST_Array_Load(int outarray, int inarray)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	float *outf = dpsoftrast.post_array4f[outarray];
+ 	const unsigned char *inb;
+ 	int firstvertex = dpsoftrast.firstvertex;
+@@ -1986,7 +1986,7 @@
+ #if 0
+ static float *DPSOFTRAST_Array_Project(int outarray, int inarray)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	float *data = inarray >= 0 ? DPSOFTRAST_Array_Load(outarray, inarray) : dpsoftrast.post_array4f[outarray];
+ 	dpsoftrast.drawclipped = DPSOFTRAST_Vertex_Project(data, dpsoftrast.screencoord4f, &dpsoftrast.drawstarty, &dpsoftrast.drawendy, data, dpsoftrast.numvertices);
+ 	return data;
+@@ -1998,7 +1998,7 @@
+ 
+ static float *DPSOFTRAST_Array_TransformProject(int outarray, int inarray, const float *inmatrix16f)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	float *data = inarray >= 0 ? DPSOFTRAST_Array_Load(outarray, inarray) : dpsoftrast.post_array4f[outarray];
+ 	dpsoftrast.drawclipped = DPSOFTRAST_Vertex_TransformProject(data, dpsoftrast.screencoord4f, &dpsoftrast.drawstarty, &dpsoftrast.drawendy, data, dpsoftrast.numvertices, inmatrix16f);
+ 	return data;
+@@ -2036,7 +2036,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_FinishBGRA8(DPSOFTRAST_State_Thread *thread, const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, const unsigned char* RESTRICT in4ub)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x;
+ 	int startx = span->startx;
+ 	int endx = span->endx;
+@@ -2545,7 +2545,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_Texture2DVaryingBGRA8(DPSOFTRAST_State_Thread *thread, const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char * RESTRICT out4ub, int texunitindex, int arrayindex, const float * RESTRICT zf)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x;
+ 	int startx = span->startx;
+ 	int endx = span->endx;
+@@ -2981,7 +2981,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_MultiplyVaryingBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *in4ub, int arrayindex, const float *zf)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x;
+ 	int startx = span->startx;
+ 	int endx = span->endx;
+@@ -3028,7 +3028,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_VaryingBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, int arrayindex, const float *zf)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x;
+ 	int startx = span->startx;
+ 	int endx = span->endx;
+@@ -3073,7 +3073,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_AddBloomBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *ina4ub, const unsigned char *inb4ub, const float *subcolor)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x, startx = span->startx, endx = span->endx;
+ 	__m128i localcolor = _mm_shuffle_epi32(_mm_cvtps_epi32(_mm_mul_ps(_mm_loadu_ps(subcolor), _mm_set1_ps(255.0f))), _MM_SHUFFLE(3, 0, 1, 2));
+ 	localcolor = _mm_packs_epi32(localcolor, localcolor);
+@@ -3096,7 +3096,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_MultiplyBuffersBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *ina4ub, const unsigned char *inb4ub)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x, startx = span->startx, endx = span->endx;
+ 	for (x = startx;x+2 <= endx;x+=2)
+ 	{
+@@ -3117,7 +3117,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_AddBuffersBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *ina4ub, const unsigned char *inb4ub)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x, startx = span->startx, endx = span->endx;
+ 	for (x = startx;x+2 <= endx;x+=2)
+ 	{
+@@ -3139,7 +3139,7 @@
+ #if 0
+ static void DPSOFTRAST_Draw_Span_TintedAddBuffersBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *ina4ub, const unsigned char *inb4ub, const float *inbtintbgra)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x, startx = span->startx, endx = span->endx;
+ 	__m128i tint = _mm_cvtps_epi32(_mm_mul_ps(_mm_loadu_ps(inbtintbgra), _mm_set1_ps(256.0f)));
+ 	tint = _mm_packs_epi32(tint, tint);
+@@ -3163,7 +3163,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_MixBuffersBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *ina4ub, const unsigned char *inb4ub)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x, startx = span->startx, endx = span->endx;
+ 	for (x = startx;x+2 <= endx;x+=2)
+ 	{
+@@ -3186,7 +3186,7 @@
+ 
+ static void DPSOFTRAST_Draw_Span_MixUniformColorBGRA8(const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span, unsigned char *out4ub, const unsigned char *in4ub, const float *color)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int x, startx = span->startx, endx = span->endx;
+ 	__m128i localcolor = _mm_shuffle_epi32(_mm_cvtps_epi32(_mm_mul_ps(_mm_loadu_ps(color), _mm_set1_ps(255.0f))), _MM_SHUFFLE(3, 0, 1, 2)), blend;
+ 	localcolor = _mm_packs_epi32(localcolor, localcolor);
+@@ -3320,7 +3320,7 @@
+ 
+ static void DPSOFTRAST_PixelShader_FlatColor(DPSOFTRAST_State_Thread *thread, const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	unsigned char * RESTRICT pixelmask = span->pixelmask;
+ 	unsigned char * RESTRICT pixel = (unsigned char *)dpsoftrast.fb_colorpixels[0] + (span->y * dpsoftrast.fb_width + span->x) * 4;
+ 	int x, startx = span->startx, endx = span->endx;
+@@ -3371,7 +3371,7 @@
+ 
+ static void DPSOFTRAST_PixelShader_VertexColor(DPSOFTRAST_State_Thread *thread, const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	unsigned char * RESTRICT pixelmask = span->pixelmask;
+ 	unsigned char * RESTRICT pixel = (unsigned char *)dpsoftrast.fb_colorpixels[0] + (span->y * dpsoftrast.fb_width + span->x) * 4;
+ 	int x, startx = span->startx, endx = span->endx;
+@@ -3445,7 +3445,7 @@
+ 
+ static void DPSOFTRAST_PixelShader_Lightmap(DPSOFTRAST_State_Thread *thread, const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	unsigned char * RESTRICT pixelmask = span->pixelmask;
+ 	unsigned char * RESTRICT pixel = (unsigned char *)dpsoftrast.fb_colorpixels[0] + (span->y * dpsoftrast.fb_width + span->x) * 4;
+ 	int x, startx = span->startx, endx = span->endx;
+@@ -4139,7 +4139,7 @@
+ 
+ static void DPSOFTRAST_PixelShader_LightSource(DPSOFTRAST_State_Thread *thread, const DPSOFTRAST_State_Triangle * RESTRICT triangle, const DPSOFTRAST_State_Span * RESTRICT span)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	float buffer_z[DPSOFTRAST_DRAW_MAXSPANLENGTH];
+ 	unsigned char buffer_texture_colorbgra8[DPSOFTRAST_DRAW_MAXSPANLENGTH*4];
+ 	unsigned char buffer_texture_normalbgra8[DPSOFTRAST_DRAW_MAXSPANLENGTH*4];
+@@ -4847,7 +4847,7 @@
+ 
+ static void DPSOFTRAST_Interpret_Draw(DPSOFTRAST_State_Thread *thread, DPSOFTRAST_Command_Draw *command)
+ {
+-#ifdef SSE_POSSIBLE
++#ifdef SSE2_POSSIBLE
+ 	int cullface = thread->cullface;
+ 	int minx, maxx, miny, maxy;
+ 	int miny1, maxy1, miny2, maxy2;
+--- a/vid_shared.c	2017-08-30 06:29:14.000000000 +0200
++++ b/vid_shared.c	2024-03-18 19:11:31.063333077 +0100
+@@ -1729,16 +1729,11 @@
+ 
+ void VID_Shared_Init(void)
+ {
+-#ifdef SSE_POSSIBLE
+-	if (Sys_HaveSSE2())
+-	{
+-		Con_Printf("DPSOFTRAST available (SSE2 instructions detected)\n");
+-		Cvar_RegisterVariable(&vid_soft);
+-		Cvar_RegisterVariable(&vid_soft_threads);
+-		Cvar_RegisterVariable(&vid_soft_interlace);
+-	}
+-	else
+-		Con_Printf("DPSOFTRAST not available (SSE2 disabled or not detected)\n");
++#ifdef SSE2_POSSIBLE
++	Con_Printf("DPSOFTRAST available (SSE2 instructions compiled in)\n");
++	Cvar_RegisterVariable(&vid_soft);
++	Cvar_RegisterVariable(&vid_soft_threads);
++	Cvar_RegisterVariable(&vid_soft_interlace);
+ #else
+ 	Con_Printf("DPSOFTRAST not available (SSE2 not compiled in)\n");
+ #endif
