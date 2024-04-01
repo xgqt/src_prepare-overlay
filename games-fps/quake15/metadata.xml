@@ -9,4 +9,7 @@
     <flag name="capture">Adds support for video capture with media-libs/libtheora</flag>
     <flag name="textures">Install and setup the updated textures</flag>
   </use>
+  <upstream>
+    <remote-id type="github">DarkPlacesEngine/darkplaces</remote-id>
+  </upstream>
 </pkgmetadata>

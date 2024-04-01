@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit flag-o-matic unpacker desktop wrapper
+inherit flag-o-matic unpacker desktop
 
 # This is the only known version of the engine to work with this mod
 ENGINE_PV="20170829_beta1"
@@ -60,7 +60,7 @@ RDEPEND="
 	dev-libs/d0_blind_id
 	dev-games/ode
 	net-misc/curl
-	virtual/jpeg:0
+	media-libs/libjpeg-turbo
 	sys-libs/zlib
 	media-libs/libpng
 	cdinstall? ( games-fps/quake1-data )
@@ -184,7 +184,8 @@ src_compile() {
 		DP_SSE2=${sse2_enabled} \
 		FORCEGAME=quake15"
 	# If neither OSS or ALSA are selected, then SDL must be selected.
-	# However, SDL is a backend for both graphics and sound - so not having ALSA or OSS is only an option, if OpenGL is not.
+	# However, SDL is a backend for both graphics and sound - so not
+	# having ALSA or OSS is only an option, if OpenGL is not.
 	local sound_api="NULL"
 	if use oss; then
 		sound_api="OSS"
@@ -200,7 +201,7 @@ src_compile() {
 	fi
 	ln -s /usr/share/quake1/id1 id1
 	# Only compile a maximum of 1 client
-	cd ${WORKDIR}/engine
+	pushd "${WORKDIR}/engine"
 	local compile_client=false
 	if use sdl; then
 		compile_client=true
@@ -212,12 +213,14 @@ src_compile() {
 	if use dedicated; then
 		emake ${opts} "sv-${type}"
 	fi
+	popd
 	if ${compile_client}; then
-		cd ${WORKDIR}
+		pushd "${WORKDIR}"
 		unzip -j quake15/q15.pk3 gfx/qplaque.lmp
-		gcc ${DISTDIR}/lmp2tga.c -o lmp2tga
+		gcc "${DISTDIR}/lmp2tga.c" -o lmp2tga
 		./lmp2tga qplaque.lmp
-		convert qplaque.tga -gravity North -chop 0x112 ${WORKDIR}/engine/${PN}.png
+		convert qplaque.tga -gravity North -chop 0x112 "${WORKDIR}/engine/${PN}.png"
+		popd
 	fi
 }
 

@@ -39,7 +39,7 @@ RDEPEND="
 	dev-libs/d0_blind_id
 	dev-games/ode
 	net-misc/curl
-	virtual/jpeg:0
+	media-libs/libjpeg-turbo
 	sys-libs/zlib
 	media-libs/libpng
 	cdinstall? ( games-fps/quake1-data )
