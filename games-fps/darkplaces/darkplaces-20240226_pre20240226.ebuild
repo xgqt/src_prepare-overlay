@@ -1,4 +1,4 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -20,8 +20,8 @@ SRC_URI="https://github.com/DarkPlacesEngine/darkplaces/archive/${GIT_COMMIT}.ta
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
-IUSE="capture cdinstall cpu_flags_x86_sse debug dedicated demo ipv6 lights sdl textures"
+KEYWORDS="~amd64 ~arm64 ~x86"
+IUSE="capture cpu_flags_x86_sse debug dedicated demo ipv6 lights sdl textures"
 
 REQUIRED_USE="
 	amd64? ( cpu_flags_x86_sse )
@@ -42,7 +42,6 @@ RDEPEND="
 	media-libs/libjpeg-turbo
 	sys-libs/zlib
 	media-libs/libpng
-	cdinstall? ( games-fps/quake1-data )
 	demo? ( games-fps/quake1-demodata )
 	textures? ( >=games-fps/quake1-textures-20050820 )
 	sdl? ( ${SDL_RDEPEND} )
@@ -150,10 +149,8 @@ src_install() {
 		newbin "${PN}-${type}" ${PN}
 		newicon darkplaces72x72.png ${PN}.png
 		if use demo; then
-			# Install command-line for demo, even if not desktop entry
+			# Install command-line for demo
 			make_wrapper ${PN}-demo "${PN} -game demo"
-		fi
-		if use demo && ! use cdinstall; then
 			make_desktop_entry ${PN}-demo "Dark Places (Demo)"
 		else
 			# Full version takes precedence over demo
@@ -178,7 +175,7 @@ src_install() {
 }
 
 pkg_postinst() {
-	if ! use cdinstall && ! use demo ; then
+	if ! use demo ; then
 		elog "Remember to place pak0.pak and pak1.pak in ${dir}/id1"
 		if use cdda; then
 			elog "If you wish to have the original soundtrack available without playing from an optical drive, please make sure that the path ${dir}/id1/sound/cdtracks exists, and that it contains the original soundtrack. The expected filename schema is track%i.%s with a double-digit count, either in WAV RIFF or OGG Vorbis format."

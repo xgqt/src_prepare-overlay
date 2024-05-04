@@ -1,4 +1,4 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -23,7 +23,7 @@ LICENSE="GPL-2 UNKNOWN"
 SLOT="0"
 # DarkPlaces' PNG is broken on big endian and this mod unfortunately uses PNG a lot. Sorry :(
 KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="alsa capture cdda cdinstall cpu_flags_x86_sse cpu_flags_x86_sse2 debug dedicated ipv6 opengl oss sdl textures"
+IUSE="alsa capture cdda cpu_flags_x86_sse cpu_flags_x86_sse2 debug dedicated ipv6 opengl oss sdl textures"
 
 REQUIRED_USE="
 	alsa? ( !oss )
@@ -63,7 +63,6 @@ RDEPEND="
 	media-libs/libjpeg-turbo
 	sys-libs/zlib
 	media-libs/libpng
-	cdinstall? ( games-fps/quake1-data )
 	textures? ( >=games-fps/quake1-textures-20050820 )
 	opengl? ( ${GLX_RDEPEND} )
 	sdl? ( ${SDL_RDEPEND} )
@@ -243,11 +242,9 @@ src_install() {
 }
 
 pkg_postinst() {
-	if ! use cdinstall; then
-		elog "Please make sure that the path /usr/share/quake1/id1 exists and place pak0.pak and pak1.pak in /usr/share/quake1/id1"
-		if use cdda; then
-			elog "If you wish to have the original soundtrack available without playing from an optical drive, please make sure that the path /usr/share/quake1/id1/sound/cdtracks exists, and that it contains the original soundtrack. The expected filename schema is track%i.%s with a double-digit count, either in WAV RIFF or OGG Vorbis format."
-		fi
+	elog "Please make sure that the path /usr/share/quake1/id1 exists and place pak0.pak and pak1.pak in /usr/share/quake1/id1"
+	if use cdda; then
+		elog "If you wish to have the original soundtrack available without playing from an optical drive, please make sure that the path /usr/share/quake1/id1/sound/cdtracks exists, and that it contains the original soundtrack. The expected filename schema is track%i.%s with a double-digit count, either in WAV RIFF or OGG Vorbis format."
 	fi
 	if use sdl && ! use alsa; then
 		einfo "If audio latency is an issue, consider choosing OpenGL and ALSA USE flags instead of SDL."
